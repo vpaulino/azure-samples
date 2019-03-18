@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Linq;
 
-namespace Azure.Storage.Blobs
+namespace Azure.Storage.Abstractions.Blobs
 {
-    public class BlobItem
+    public class BlobDescription
     {
-        public BlobItem(Uri uri, string containerName)
+        public BlobDescription(Uri uri, string containerName, bool isDirectory)
         {
             this.Uri = uri;
             this.ContainerName = containerName;
             this.FileName = this.Uri.AbsoluteUri.Split('/').Last() ;
+            this.IsDirectory = isDirectory;
         }
 
         public Uri Uri { get;  }
         public string ContainerName { get; }
         public string FileName { get; }
-
+        public bool IsDirectory { get; }
     }
 }

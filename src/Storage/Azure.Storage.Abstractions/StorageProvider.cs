@@ -5,7 +5,7 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Threading;
 
-namespace Azure.Storage
+namespace Azure.Storage.Abstractions
 {
     public abstract class StorageProvider
     {

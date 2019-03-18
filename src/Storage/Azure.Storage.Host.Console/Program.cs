@@ -1,4 +1,7 @@
-﻿using Azure.Storage.Blobs;
+﻿using Azure.Storage.Abstractions;
+using Azure.Storage.Abstractions.Blobs;
+using Azure.Storage.Blobs;
+using Azure.Storage.Files;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -14,10 +17,7 @@ namespace Azure.Storage.Host.UploadClient
     {
         static void Main(string[] args)
         {
-
-           
             MainAsync(args).Wait();
-
         }
 
         private static async Task MainAsync(string[] args)
@@ -26,61 +26,44 @@ namespace Azure.Storage.Host.UploadClient
             string filename = GetFileNameToUpload(args);
             string destinationLocation = GetDestinationLocation(args);
 
-            await Upload(folder, filename, destinationLocation);
-            var blobs = await GetBlobs(destinationLocation);
+            await Blobs(folder, filename, destinationLocation);
+
+          //  await Files(folder, filename, destinationLocation);
+        }
+
+        //private static async Task Files(string folder, string filename, string destinationLocation)
+        //{
+        //    await UploadFile(folder, filename, destinationLocation);
+        //    var blobs = await GetBlobs(destinationLocation);
+
+        //    foreach (var blob in blobs.CloudItems)
+        //    {
+        //        FileDescription filesDetails = await GetFileDetails(blob.ContainerName, blob.FileName);
+        //        Console.WriteLine(blobDetails);
+        //        await Download(blobDetails, Environment.CurrentDirectory);
+        //        await Delete(blobDetails);
+        //    }
+        //}
+
+        private static async Task Blobs(string folder, string filename, string destinationLocation)
+        {
+            await BlobsUseCases.UploadBlob(folder, filename, destinationLocation);
+            var blobs = await BlobsUseCases.GetBlobs(destinationLocation);
 
             foreach (var blob in blobs.CloudItems)
             {
-                BlobItemDetails blobDetails = await GetBlobDetails(blob.ContainerName, blob.FileName);
+                BlobDescriptionDetails blobDetails = await BlobsUseCases.GetBlobDetails(blob.ContainerName, blob.FileName);
                 Console.WriteLine(blobDetails);
-                await Download(blobDetails, Environment.CurrentDirectory);
-                await Delete(blobDetails);
+                await BlobsUseCases.Download(blobDetails, Environment.CurrentDirectory);
+                await BlobsUseCases.Delete(blobDetails);
             }
         }
 
-        private static async Task Delete(BlobItemDetails blobDetails)
-        {
-            var blobStorage = new BlobStorageProvider(new StorageSettings(ConfigurationManager.AppSettings.Get("StorageConnectionString")));
-            var result = await blobStorage.DeleteBlob(blobDetails.ContainerName, blobDetails.FileName, CancellationToken.None);
-            
-        }
+      
 
-        private static async Task Download(BlobItemDetails blobDetails, string destinationFolder)
+        private static void ReportUploadResult(FileDescription fileDescription)
         {
-            var blobStorage = new BlobStorageProvider(new StorageSettings(ConfigurationManager.AppSettings.Get("StorageConnectionString")));
-            var fullFileName = $"{destinationFolder}/{blobDetails.FileName}";
-            using (FileStream fs = new FileStream(fullFileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
-            {
-              var result =  await blobStorage.Download(blobDetails.ContainerName, blobDetails.FileName, fs, CancellationToken.None);
-              await fs.FlushAsync();
-            }
-
-            if (!File.Exists(fullFileName))
-                throw new OperationCanceledException("File was not downloaded as expected");
-        }
-
-        private static async Task<ListResult<BlobItem>> GetBlobs(string folder)
-        {
-            var blobStorage = new BlobStorageProvider(new StorageSettings(ConfigurationManager.AppSettings.Get("StorageConnectionString")));
-            return await blobStorage.ListBlobs(folder, CancellationToken.None);
-            
-        }
-
-        private static async Task<BlobItemDetails> GetBlobDetails(string folder, string filename)
-        {
-            var blobStorage = new BlobStorageProvider(new StorageSettings(ConfigurationManager.AppSettings.Get("StorageConnectionString")));
-            var result = await blobStorage.GetBlobDetails(folder, filename, CancellationToken.None);
-            return result;
-        }
-
-        private static async Task Upload(string folder, string filename, string destinationLocation)
-        {
-            using (Stream stream = GetFileToUpload(new Uri($"{folder}/{filename}")))
-            {
-                var blobStorage = new BlobStorageProvider(new StorageSettings(ConfigurationManager.AppSettings.Get("StorageConnectionString")));
-                var result = await blobStorage.Upload(stream, destinationLocation, filename, CancellationToken.None);
-                ReportUploadResult(result);
-            }
+            Console.WriteLine(fileDescription);
         }
 
         private static string GetDestinationLocation(string[] args)

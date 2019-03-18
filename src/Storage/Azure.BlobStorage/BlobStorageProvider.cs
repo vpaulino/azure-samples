@@ -1,4 +1,6 @@
-﻿using Microsoft.WindowsAzure.Storage;
+﻿using Azure.Storage.Abstractions;
+using Azure.Storage.Abstractions.Blobs;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
@@ -17,60 +19,60 @@ namespace Azure.Storage.Blobs
             
         }
 
-        private async Task<CloudBlobContainer> GetOrCreateContainer(string location, CloudBlobClient blobClient)
+        protected virtual async Task<CloudBlobContainer> GetOrCreateContainer(string location, CloudBlobClient blobClient)
         {
             CloudBlobContainer container = blobClient.GetContainerReference(location);
-
             await container.CreateIfNotExistsAsync();
             return container;
         }
 
         protected virtual CloudBlobContainer GetBlobContainer(string location, CloudStorageAccount storageAccount)
         {
+            
             CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
-            // Get reference to the blob container by passing the name by reading the value from the configuration (appsettings.json)
             return blobClient.GetContainerReference(location);
         }
 
-
-      
-
-
-
-        public async Task<ListResult<ContainerItem>> ListContainers(CancellationToken ct)
+        /// <summary>
+        /// Lists all containers that exists on the account
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public virtual async Task<ListResult<ContainerItem>> ListContainers(CancellationToken ct)
         {
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
-
             var client = storageAccount.CreateCloudBlobClient();
-
             BlobContinuationToken blobContinuationToken = null;
             List<CloudBlobContainer> cloudBlobContainers = new List<CloudBlobContainer>();
 
             do
             {
                 var result = await client.ListContainersSegmentedAsync(blobContinuationToken, ct);
-
                 blobContinuationToken = result.ContinuationToken;
-
                 cloudBlobContainers.AddRange(result.Results);
-
             } while (blobContinuationToken != null);
             
             return new ListResult<ContainerItem>(cloudBlobContainers.Select((container) => new ContainerItem(container.Uri, container.Name)));
         }
 
-        public async Task RenameBlob(string location, string oldFileName, string newFileName, CancellationToken ct)
+        /// <summary>
+        /// Renames the blob to a new name
+        /// </summary>
+        /// <param name="location">container name</param>
+        /// <param name="currentFileName">current file name to be changed</param>
+        /// <param name="newFileName">new file name</param>
+        /// <param name="ct">operation cancellation token</param>
+        /// <returns></returns>
+        public virtual async Task RenameBlob(string location, string currentFileName, string newFileName, CancellationToken ct)
         {
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
-
             CloudBlobContainer container = GetBlobContainer(location, storageAccount);
-
             CloudBlockBlob blobCopy = container.GetBlockBlobReference(newFileName);
 
             if (!await blobCopy.ExistsAsync())
             {
-                CloudBlockBlob blob = container.GetBlockBlobReference(oldFileName);
-
+                
+                CloudBlockBlob blob = container.GetBlockBlobReference(currentFileName);
                 if (await blob.ExistsAsync(ct))
                 {
                     await blobCopy.StartCopyAsync(blob, ct);
@@ -79,16 +81,20 @@ namespace Azure.Storage.Blobs
             }
         }
 
-        public async Task MoveBlob(string currentlocation, string newLocation, string fileName, CancellationToken ct)
+        /// <summary>
+        /// Moves one blob from one location to other location
+        /// </summary>
+        /// <param name="currentlocation">current container name</param>
+        /// <param name="newLocation">destination container name</param>
+        /// <param name="fileName">file to move</param>
+        /// <param name="ct">operation container name</param>
+        /// <returns></returns>
+        public virtual async Task MoveBlob(string currentlocation, string newLocation, string fileName, CancellationToken ct)
         {
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
-
             CloudBlobContainer container = GetBlobContainer(currentlocation, storageAccount);
-
             CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
-
             CloudBlobContainer newContainer = await GetOrCreateContainer(newLocation, blobClient);
-
             CloudBlockBlob blobCopy = newContainer.GetBlockBlobReference(fileName);
 
             if (!await blobCopy.ExistsAsync())
@@ -103,92 +109,96 @@ namespace Azure.Storage.Blobs
             }
         }
 
-
-        public async Task<ListResult<BlobItem>> ListBlobs(string location,  CancellationToken ct)
+        /// <summary>
+        /// Lists all blobs that exists on the location
+        /// </summary>
+        /// <param name="location">container name</param>
+        /// <param name="ct">operation cancellation token</param>
+        /// <returns></returns>
+        public virtual async Task<ListResult<BlobDescription>> ListBlobs(string location,  CancellationToken ct)
         {
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
-
             CloudBlobContainer container = GetBlobContainer(location, storageAccount);
-
             BlobContinuationToken blobContinuationToken = null;
 
             List<IListBlobItem> listResult = new List<IListBlobItem>();
-            
             do
             {
-                
                 var result = await container.ListBlobsSegmentedAsync(blobContinuationToken, ct);
-                
                 blobContinuationToken = result.ContinuationToken;
-
                 listResult.AddRange(result.Results);
-
             } while (blobContinuationToken != null);
-             
 
-            return new ListResult<BlobItem>(listResult.Select((listBlobItem)=> new BlobItem(listBlobItem.Uri, listBlobItem.Container.Name)));
+            return new ListResult<BlobDescription>(listResult.Select((listBlobItem)=> new BlobDescription(listBlobItem.Uri, listBlobItem.Container.Name, listBlobItem is CloudBlobDirectory)));
         }
-
-        public async Task<BlobItemDetails> GetBlobDetails(string location, string name, CancellationToken ct)
+         
+        /// <summary>
+        /// Gets all the detailed information regarding an existing blob
+        /// </summary>
+        /// <param name="location">container name</param>
+        /// <param name="name">file name</param>
+        /// <param name="ct">operation cancellation token</param>
+        /// <returns></returns>
+        public virtual async Task<BlobDescriptionDetails> GetBlobDetails(string location, string name, CancellationToken ct)
         {
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
-
             CloudBlobContainer container = GetBlobContainer(location, storageAccount);
-
             var blob = await container.GetBlobReferenceFromServerAsync(name);
-
-            return new BlobItemDetails(blob.Uri, blob.Container.Name, blob.Properties.BlobType, blob.Properties.ContentEncoding, blob.Properties.ContentLanguage, blob.Properties.Created, blob.Properties.ETag, blob.Properties.LastModified, blob.Properties.Length, blob.Properties.LeaseStatus, blob.Properties.LeaseDuration);
+            return new BlobDescriptionDetails(blob.Uri, blob.Container.Name, blob is CloudBlobDirectory, blob.Properties.ContentEncoding, blob.Properties.ContentLanguage, blob.Properties.Created, blob.Properties.ETag, blob.Properties.LastModified, blob.Properties.Length, blob.Properties.LeaseStatus, blob.Properties.LeaseDuration);
 
         }
 
-        
-        public async Task<DeleteResult> DeleteBlob(string location, string fileName, CancellationToken ct)
+        /// <summary>
+        /// Deletes blob from the blob storage
+        /// </summary>
+        /// <param name="location">blob container name</param>
+        /// <param name="fileName">file name</param>
+        /// <param name="ct">operation cancellation token</param>
+        /// <returns></returns>
+        public virtual async Task<DeleteResult> DeleteBlob(string location, string fileName, CancellationToken ct)
         {
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
-             
             CloudBlobContainer container = GetBlobContainer(location, storageAccount);
-
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
-
             var result = await blockBlob.DeleteIfExistsAsync(ct);
-
             return new DeleteResult(result, blockBlob.Uri);
 
         }
 
-        public async Task<DownloadResult> Download(string location, string fileName, Stream destination, CancellationToken ct)
+        /// <summary>
+        /// Downloads blob from the cloud storage
+        /// </summary>
+        /// <param name="location">container name</param>
+        /// <param name="fileName">file name to download</param>
+        /// <param name="destination">stream destination</param>
+        /// <param name="ct">operation cancellation token</param>
+        /// <returns></returns>
+        public virtual async Task<DownloadResult> Download(string location, string fileName, Stream destination, CancellationToken ct)
         {
 
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
-            // Create the blob client.
             CloudBlobContainer container = GetBlobContainer(location, storageAccount);
-
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
-
             await blockBlob.DownloadToStreamAsync(destination, ct);
-
             return new DownloadResult(blockBlob.Uri);
-
-
         }
-        
-        public async Task<UploadResult> Upload(Stream stream, string location, string fileName, CancellationToken ct)
+        /// <summary>
+        /// Uploads stream content as a blob 
+        /// </summary>
+        /// <param name="stream">content to be uploaded</param>
+        /// <param name="location">container name</param>
+        /// <param name="fileName">blob name to be set</param>
+        /// <param name="ct">operation cancellation token</param>
+        /// <returns></returns>
+        public virtual async Task<UploadResult> Upload(Stream stream, string location, string fileName, CancellationToken ct)
         {
-
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
-            // Create the blob client.
             CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
-            // Get reference to the blob container by passing the name by reading the value from the configuration (appsettings.json)
             CloudBlobContainer container = await GetOrCreateContainer(location, blobClient);
-            // Get the reference to the block blob from the container
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
-            // Upload the file
             await blockBlob.UploadFromStreamAsync(stream, ct);
 
             return new UploadResult(blockBlob.Uri, location, fileName);
-
-
         }
-
     }
 }

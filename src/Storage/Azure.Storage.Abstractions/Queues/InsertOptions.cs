@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Azure.Storage.Queues
+namespace Azure.Storage.Abstractions.Queues
 {
     public class InsertOptions
     {

@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Azure.Storage.Queues
+namespace Azure.Storage.Abstractions.Queues
 {
     public interface IQueueStorageProvider
     {

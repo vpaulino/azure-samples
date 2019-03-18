@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Azure.Storage.Blobs
+namespace Azure.Storage.Abstractions.Blobs
 {
     public interface IBlobStorageProvider
     {

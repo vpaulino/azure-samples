@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Azure.Storage.Blobs
+namespace Azure.Storage.Abstractions.Blobs
 {
     public class DeleteResult
     {

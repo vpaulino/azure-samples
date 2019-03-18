@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace Azure.Storage.Blobs
+namespace Azure.Storage.Abstractions.Blobs
 {
     public class ContainerItem
     {

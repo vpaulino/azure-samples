@@ -9,6 +9,8 @@ using Azure.Storage;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using System.IO;
+using Azure.Storage.Abstractions;
+using Azure.Storage.Abstractions.Queues;
 
 namespace Azure.Storage.Queues
 {
@@ -20,35 +22,30 @@ namespace Azure.Storage.Queues
             this.binaryFormatter = binaryFormatter;
         }
 
-
+        private async Task<CloudQueue> GetOrCreateQueueAsync(string queueName, CloudStorageAccount storageAccount, CancellationToken ct)
+        {
+            CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
+            CloudQueue queue = queueClient.GetQueueReference(queueName);
+            IsCancelled(ct);
+            await queue.CreateIfNotExistsAsync();
+            return queue;
+        }
+         
         public async Task<QueueInsertResult> InsertAsync<T>(T payload, string queueName, InsertOptions options, CancellationToken ct)
         {
-
             var storageAccount = this.GetCloudStorageAccount();
-
             IsCancelled(ct);
-            // Create the queue client.
-            CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
-
-            // Retrieve a reference to a queue.
-            CloudQueue queue = queueClient.GetQueueReference(queueName);
-
-            IsCancelled(ct);
-
-            // Create the queue if it doesn't already exist.
-            queue.CreateIfNotExists();
-
+          
+            CloudQueue queue = await GetOrCreateQueueAsync(queueName, storageAccount, ct);
             using (var memoryStream = new MemoryStream())
             {
                 this.binaryFormatter.Serialize(memoryStream, payload);
                 CloudQueueMessage message = new CloudQueueMessage(memoryStream.ToArray());
-                await queue.AddMessageAsync(message, options.TimeToLive, options.VisibilityDelay,null, null, ct);
-            }
+                await queue.AddMessageAsync(message, options.TimeToLive, options.VisibilityDelay, null, null, ct);
+            } 
 
-            return new QueueInsertResult();
-        }
-
-     
+            return new QueueInsertResult(queue.Name, queue.Uri, queue.ApproximateMessageCount, queue.Metadata);
+        } 
 
     }
 }

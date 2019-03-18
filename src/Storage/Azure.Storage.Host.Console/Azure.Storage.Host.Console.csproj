@@ -35,9 +35,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.WindowsAzure.Configuration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.3.2.3\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -48,6 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FilesUseCases.cs" />
+    <Compile Include="BlobsUseCases.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -64,9 +63,13 @@
       <Project>{17836cf7-152b-440c-a2c2-d703d85a0517}</Project>
       <Name>Azure.Storage.Queue</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Azure.Storage\Azure.Storage.csproj">
-      <Project>{3a3f25a1-7a7e-485a-a615-58ac96f917ab}</Project>
-      <Name>Azure.Storage</Name>
+    <ProjectReference Include="..\Azure.Storage.Abstractions\Azure.Storage.Abstractions.csproj">
+      <Project>{1f2ef8d6-beba-4dd6-b712-6b02bdf13055}</Project>
+      <Name>Azure.Storage.Abstractions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Azure.Storage.File\Azure.Storage.File.csproj">
+      <Project>{7D6E180E-6FD3-48CA-BE98-580514462A22}</Project>
+      <Name>Azure.Storage.File</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

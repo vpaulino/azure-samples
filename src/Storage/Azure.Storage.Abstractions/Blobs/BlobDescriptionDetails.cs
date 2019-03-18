@@ -2,15 +2,11 @@
 using System.Linq;
 using Microsoft.WindowsAzure.Storage.Blob;
 
-namespace Azure.Storage.Blobs
+namespace Azure.Storage.Abstractions.Blobs
 {
-    public class BlobItemDetails : BlobItem
+    public class BlobDescriptionDetails : BlobDescription
     {
-        
-
-         
-
-        public BlobItemDetails(Uri uri, string containerName, BlobType blobType, string contentEncoding, string contentLanguage, DateTimeOffset? created, string eTag, DateTimeOffset? lastModified, long length, LeaseStatus leaseStatus, LeaseDuration leaseDuration) : base(uri, containerName)
+        public BlobDescriptionDetails(Uri uri, string containerName, bool isDirectory, string contentEncoding, string contentLanguage, DateTimeOffset? created, string eTag, DateTimeOffset? lastModified, long length, LeaseStatus leaseStatus, LeaseDuration leaseDuration) : base(uri, containerName, isDirectory)
         {
             this.ContentEncoding = contentEncoding;
             this.ContentLanguage = contentLanguage;

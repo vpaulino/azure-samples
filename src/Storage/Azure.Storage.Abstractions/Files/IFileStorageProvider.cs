@@ -14,7 +14,8 @@ namespace Azure.Storage.Files
         Task<DirectoryDescription> CreateDirectory(string root, string directory, CancellationToken ct);
         Task<FileDescription> CreateFile(string root, string directory, string name, Stream file, CancellationToken ct);
         Task<IEnumerable<FileDescription>> CreateFiles(string root, string directory, IEnumerable<Tuple<string, Stream>> files, CancellationToken ct);
-         Task<ListResult<FileDescription>> GetFiles(string root, string directory, IEnumerable<Tuple<string, Stream>> files, CancellationToken ct);
+        Task<ListResult<FileDescription>> GetFiles(string root, string directory, IEnumerable<Tuple<string, Stream>> files, CancellationToken ct);
+        Task<ListResult<ContentDescription>> ListAllContent(string root, string directory, CancellationToken ct);
         Task<FileDescription> MoveFile(string root, string currentDirectory, string newDirectory, string file, CancellationToken ct);
         Task<DirectoryDescription> RemoveDirectory(string root, string directory, CancellationToken ct);
         Task<bool> RemoveFile(string root, string directory, string file, CancellationToken ct);

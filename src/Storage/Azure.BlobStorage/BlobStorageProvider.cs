@@ -144,7 +144,7 @@ namespace Azure.Storage.Blobs
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
             CloudBlobContainer container = GetBlobContainer(location, storageAccount);
             var blob = await container.GetBlobReferenceFromServerAsync(name);
-            return new BlobDescriptionDetails(blob.Uri, blob.Container.Name, blob is CloudBlobDirectory, blob.Properties.ContentEncoding, blob.Properties.ContentLanguage, blob.Properties.Created, blob.Properties.ETag, blob.Properties.LastModified, blob.Properties.Length, blob.Properties.LeaseStatus, blob.Properties.LeaseDuration);
+            return blob.ConvertToBlobDescriptionDetails();
 
         }
 
@@ -155,14 +155,13 @@ namespace Azure.Storage.Blobs
         /// <param name="fileName">file name</param>
         /// <param name="ct">operation cancellation token</param>
         /// <returns></returns>
-        public virtual async Task<DeleteResult> DeleteBlob(string location, string fileName, CancellationToken ct)
+        public virtual async Task<BlobDescriptionDetails> DeleteBlob(string location, string fileName, CancellationToken ct)
         {
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
             CloudBlobContainer container = GetBlobContainer(location, storageAccount);
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
             var result = await blockBlob.DeleteIfExistsAsync(ct);
-            return new DeleteResult(result, blockBlob.Uri);
-
+            return blockBlob.ConvertToBlobDescriptionDetails();
         }
 
         /// <summary>
@@ -173,15 +172,16 @@ namespace Azure.Storage.Blobs
         /// <param name="destination">stream destination</param>
         /// <param name="ct">operation cancellation token</param>
         /// <returns></returns>
-        public virtual async Task<DownloadResult> Download(string location, string fileName, Stream destination, CancellationToken ct)
+        public virtual async Task<BlobDescriptionDetails> Download(string location, string fileName, Stream destination, CancellationToken ct)
         {
 
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
             CloudBlobContainer container = GetBlobContainer(location, storageAccount);
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
             await blockBlob.DownloadToStreamAsync(destination, ct);
-            return new DownloadResult(blockBlob.Uri);
+            return blockBlob.ConvertToBlobDescriptionDetails();
         }
+
         /// <summary>
         /// Uploads stream content as a blob 
         /// </summary>
@@ -190,15 +190,20 @@ namespace Azure.Storage.Blobs
         /// <param name="fileName">blob name to be set</param>
         /// <param name="ct">operation cancellation token</param>
         /// <returns></returns>
-        public virtual async Task<UploadResult> Upload(Stream stream, string location, string fileName, CancellationToken ct)
+        public virtual async Task<BlobDescriptionDetails> Upload(Stream stream, string location, string fileName, string contentType, CancellationToken ct)
         {
             CloudStorageAccount storageAccount = GetCloudStorageAccount();
             CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
             CloudBlobContainer container = await GetOrCreateContainer(location, blobClient);
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
+
+            blockBlob.Properties.ContentType = contentType;
+
+
             await blockBlob.UploadFromStreamAsync(stream, ct);
 
-            return new UploadResult(blockBlob.Uri, location, fileName);
+            
+            return blockBlob.ConvertToBlobDescriptionDetails();
         }
     }
 }

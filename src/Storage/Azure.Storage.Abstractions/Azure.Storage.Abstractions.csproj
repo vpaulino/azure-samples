@@ -11,7 +11,7 @@
 		<PackageId>Azure.Storage.Abstractions</PackageId>
 		<PackageVersion>1.0.0</PackageVersion>
 		<RootNamespace>Azure.Storage.Abstractions</RootNamespace>
-		<PackageDescription> Contracts, base types and models  used in the concrete implementations</PackageDescription>
+		<PackageDescription> Contracts, base types and models to absctract the access to azure storage</PackageDescription>
 		<PackageTags>Azure Storage</PackageTags>
 	</PropertyGroup>
 
